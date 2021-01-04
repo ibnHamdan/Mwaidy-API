@@ -1,9 +1,11 @@
+const { request } = require("express");
+const mssql = require("mssql");
 const query = require("../db/db-connection");
 const { multipleColumnSet } = require("../utils/common.utils");
 const Role = require("../utils/userRoles.utils");
 
 class UserModel {
-  tableName = "user";
+  tableName = "users";
 
   find = async (params = {}) => {
     let sql = `SELECT * FROM ${this.tableName}`;
@@ -19,15 +21,13 @@ class UserModel {
   };
 
   findOne = async (params) => {
-    const { columnSet, values } = multipleColumnSet(params);
+    const cnx = await query;
 
-    const sql = `SELECT * FROM ${this.tableName}
-        WHERE ${columnSet}`;
+    const request = await cnx.request();
 
-    const result = await query(sql, [...values]);
+    const result = await request.input("userid", mssql.Int, params.id).query("select * from users where id=@userid");
 
-    // return back the first row (user)
-    return result[0];
+    return result.recordset[0];
   };
 
   create = async ({ username, password, first_name, last_name, email, role = Role.SuperUser, age }) => {
